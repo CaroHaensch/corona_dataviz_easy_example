@@ -44,7 +44,7 @@ Für das Plotten brauchen wir den Datensatz im sogenannten Tidy Format, in der j
 ```{r}
 glimpse(COVID_wide)
 library(tidyr)
-COVID_long <- pivot_longer(COVID_all, cols = 6:54, names_to="date")
+COVID_long <- pivot_longer(COVID_wide, cols = 6:54, names_to="date")
 ```
 
 Seht ihr den Unterschied zu vorhin?
