@@ -1,0 +1,118 @@
+---
+title: "Corona Visualisierung"
+author: "Anna-Carolina Haensch"
+date: "11 3 2020"
+output: html_document
+---
+
+
+```{r settings, include = FALSE}
+knitr::opts_chunk$set(root.dir = '~/Downloads/COVID-19-master/COVID-19-master')
+```
+
+
+Angesichts der aktuellen Corona-Virus Ansteckungen können wir uns heute außer der Reihe uns schon einmal mit Datenvisualisierungen beschäftigen.
+
+Dazu benötigen wir das Paket ggplot2 sowie wie bisher das Paket dplyr.
+
+```{r warning=F}
+#install.packages("tidyverse")
+library(dplyr)
+library(ggplot2)
+```
+
+
+Außerdem brauchen wir natürlich einen Datensatz mit den Zeitverläufen der Ansteckungen, erhältlich hier: https://github.com/CSSEGISandData/COVID-19 Falls ihr mit git vertraut seid, könnt das Prjekt natürlich auch klonen, ansonsten reicht es wenn ihr es als Zip herunterladet und entpackt. Im ersten Chunk (grau hinterlegte Box) des Files müsst ihr Euren Datenpfad eingeben/ersetzen.
+
+Als nächstes laden wir drei Datensätze mit Zeitreihen für Infektionen, Todesfälle und Genesungen. Dazu verwenden wir das Paket readr, ebenfalls aus dem tidyverse.
+
+```{r warning=F, message=F}
+
+library(readr)
+COVID_Confirmed <- read_csv("csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv")
+COVID_Death <- read_csv("csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv")
+COVID_Recovered <- read_csv("csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv")
+
+COVID_wide <- bind_rows(list("Confirmed"=COVID_Confirmed, 
+               "Death"=COVID_Death, 
+               "Recovered"= COVID_Recovered), 
+                  .id = "Type")
+
+```
+
+Für das Plotten brauchen wir den Datensatz im sogenannten Tidy Format, in der jede Beobachtung eine Zeile darstellt. Wir müssen also alle Datumsangaben kippen, der Datensatz wird länger. Dazu brauchen wir ein weiteres Paket aus dem tidyverse, das Paket tidyr.
+```{r}
+glimpse(COVID_wide)
+library(tidyr)
+COVID_long <- pivot_longer(COVID_all, cols = 6:54, names_to="date")
+```
+
+Seht ihr den Unterschied zu vorhin?
+
+```{r}
+glimpse(COVID_long)
+```
+
+Schaut einmal genau hin, welches Format die Varibale date hat. Damit R diese Variable nicht als Character Variable behandelt, sondern als Datum, müssen wir diese Variable noch in das Format date bringen.
+
+```{r}
+library(lubridate)
+
+COVID_long_date <- COVID_long %>%
+    mutate(date=as.POSIXct(mdy(COVID_long$date)))
+
+glimpse(COVID_long_date)
+```
+
+
+
+Und jetzt sind wir bereit, Daten zu plotten.
+
+Ein mit ggplot erzeugter Datensatz hat in der Regel vier Komponenten, die für einen aussagekräften Plot benötigt werden.
+
+Diese Komponenten sind:
+ - ggplot() mit der Angabe des Datensatzes als erstem Argument und aes() als zweitem Argument aus. aes() weist Variablen Eigenschaften/Dimensionen des Plots zu, also z.B. Datumsangaben auf die x-Achse/Farben differenziert nach Ansteckungen/Todesfällen/Genesen. 
+ - geom_x summiert was für eine Art plot erstellt werden soll
+ - (stat) für notwendige Transformationen der Daten, hier nicht relevant
+ 
+Achtung: die einzelnen Elemente des Plots werden mit + und nicht mit der Pipe aneinandergebunden
+
+Zuerst einmal für Deutschland
+```{r}
+
+COVID_long_date %>%
+  filter(`Country/Region`=="Germany") %>%
+  # ab jetzt wieder Plot
+  ggplot(aes(x = date, y = value, color=Type)) + 
+  geom_line()+
+  scale_color_manual(values = c("#00AFBB", "#E7B800", "#FC4E07"))+
+  theme_minimal()
+
+```
+
+```{r}
+COVID_long_date %>%
+  group_by(Type, date) %>%
+  summarise(value=sum(value)) %>%
+ggplot(aes(x = date, y = value, color=Type)) + 
+  geom_line()+
+  scale_color_manual(values = c("#00AFBB", "#E7B800", "#FC4E07"))+
+  theme_minimal()
+```
+
+
+Aufgabe: schaut Euch COVID_long_date genau an: wie könnt ihr die Daten für Gesamt-China plotten? Oder falls das zu schwierig ist, zumindest für "Festland China".
+
+```{r}
+COVID_long_date %>%
+  filter(`Country/Region`=="Mainland China"|
+           `Country/Region`=="Macao SAR"|
+           `Country/Region`=="Hongkong SAR")%>%
+  group_by(Type, date) %>%
+  summarise(value=sum(value)) %>%
+ggplot(aes(x = date, y = value, color=Type)) + 
+  geom_line()+
+  scale_color_manual(values = c("#00AFBB", "#E7B800", "#FC4E07"))+
+  theme_minimal()
+```
+
