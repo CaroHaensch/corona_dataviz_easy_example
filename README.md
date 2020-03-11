@@ -1,5 +1,5 @@
 # corona_dataviz_easy_example
-A gentle intro to data with with ggplot2 and data on the Corona Virus for my undergrads (very little experience with R)
+A gentle intro to data viz with ggplot2 and data on the Corona Virus for my undergrads (very little experience with R)
 
 I use the data from https://coronatracker.org/ and https://github.com/CSSEGISandData/COVID-19 (Thanks!) and create a little line plot.
 
